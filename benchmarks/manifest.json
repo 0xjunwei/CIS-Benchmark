@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0",
+  "last_verified_utc": "2026-06-08",
+  "policy": {
+    "source_of_truth": "Official CIS benchmark pages and benchmark PDFs obtained under the user's CIS license/terms.",
+    "copyright_note": "This repository stores implementation metadata and links only; do not redistribute CIS benchmark text beyond permitted terms.",
+    "audit_rule": "A script run is not considered compliant until its matching validation runner or CIS-CAT Pro/authorized scanner reports passing evidence."
+  },
+  "benchmarks": [
+    {
+      "id": "cis-microsoft-windows-11-enterprise-5.0.1-level1",
+      "family": "windows-desktop",
+      "product": "Microsoft Windows 11 Enterprise",
+      "cis_benchmark_version": "5.0.1",
+      "profile": "Level 1",
+      "source_url": "https://www.cisecurity.org/benchmark/microsoft_windows_desktop",
+      "remediation_entrypoint": "benchmarks/windows/desktop/windows-11-enterprise/Invoke-CisWindows11Level1.ps1",
+      "validation_entrypoint": "benchmarks/windows/desktop/windows-11-enterprise/Test-CisWindows11Level1.ps1",
+      "controls_file": "benchmarks/windows/desktop/windows-11-enterprise/controls.windows11.enterprise.level1.json",
+      "supported_platforms": ["Windows 11 Enterprise"],
+      "status": "framework-ready-needs-full-cis-control-import"
+    },
+    {
+      "id": "cis-microsoft-windows-server-2025-2.0.0-level1",
+      "family": "windows-server",
+      "product": "Microsoft Windows Server 2025",
+      "cis_benchmark_version": "2.0.0",
+      "profile": "Level 1",
+      "source_url": "https://www.cisecurity.org/benchmark/microsoft_windows_server/",
+      "remediation_entrypoint": "benchmarks/windows/server/windows-server-2025/Invoke-CisWindowsServer2025Level1.ps1",
+      "validation_entrypoint": "benchmarks/windows/server/windows-server-2025/Test-CisWindowsServer2025Level1.ps1",
+      "controls_file": "benchmarks/windows/server/windows-server-2025/controls.windows-server2025.level1.json",
+      "supported_platforms": ["Windows Server 2025"],
+      "status": "framework-ready-needs-full-cis-control-import"
+    },
+    {
+      "id": "cis-ubuntu-linux-24.04-2.0.0-level1",
+      "family": "linux",
+      "product": "Ubuntu Linux 24.04 LTS",
+      "cis_benchmark_version": "2.0.0",
+      "profile": "Level 1 Server/Workstation via Ubuntu Security Guide where licensed/enabled",
+      "source_url": "https://www.cisecurity.org/benchmark/ubuntu_linux",
+      "remediation_entrypoint": "benchmarks/linux/ubuntu/24.04/cis-ubuntu-24.04.sh",
+      "validation_entrypoint": "benchmarks/linux/ubuntu/24.04/cis-ubuntu-24.04.sh --audit",
+      "supported_platforms": ["Ubuntu 24.04 LTS"],
+      "status": "wrapper-ready-prefers-vendor-cis-tooling"
+    },
+    {
+      "id": "cis-ubuntu-linux-22.04-3.0.0-level1",
+      "family": "linux",
+      "product": "Ubuntu Linux 22.04 LTS",
+      "cis_benchmark_version": "3.0.0",
+      "profile": "Level 1 Server/Workstation via Ubuntu Security Guide where licensed/enabled",
+      "source_url": "https://www.cisecurity.org/benchmark/ubuntu_linux",
+      "remediation_entrypoint": "benchmarks/linux/ubuntu/22.04/cis-ubuntu-22.04.sh",
+      "validation_entrypoint": "benchmarks/linux/ubuntu/22.04/cis-ubuntu-22.04.sh --audit",
+      "supported_platforms": ["Ubuntu 22.04 LTS"],
+      "status": "wrapper-ready-prefers-vendor-cis-tooling"
+    },
+    {
+      "id": "cis-future-expansion",
+      "family": "additional-benchmarks",
+      "product": "Cloud, container, application, browser, database, and SaaS benchmarks",
+      "cis_benchmark_version": "tracked in future manifest entries",
+      "profile": "TBD",
+      "source_url": "https://www.cisecurity.org/cis-benchmarks",
+      "status": "planned-link-only-until-owner-imports-authorized-controls"
+    }
+  ]
+}
