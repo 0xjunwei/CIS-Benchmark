@@ -2,6 +2,9 @@
 
 This repository began as a Windows 10 CIS Level 1 batch file. It now provides a safer framework for building auditable CIS Benchmark remediation variants across Windows and Linux without redistributing CIS benchmark content.
 
+> **Warning**
+> These scripts and framework changes were generated with Codex and have not yet been tested on production Windows or Linux systems. Treat them as unvalidated starter automation: review every control, test in an isolated lab, create backups/rollback plans, and confirm results with authorized CIS audit tooling before using them to harden real assets.
+
 ## Important compliance note
 
 Running a hardening script is not the same as passing a CIS audit. Treat every run as a change-control event:
