@@ -143,7 +143,7 @@
       "type": "registry",
       "scope": "user",
       "implementation_status": "automated",
-      "attack_surface_reduction": "Applies the user control to each real user SID and the default profile instead of the invalid HKU\\Software path.",
+      "attack_surface_reduction": "Applies the user control to loaded user hives, temporarily loaded signed-out profile hives, and the default profile instead of the invalid HKU\\Software path.",
       "registry": {
         "sub_path": "Software\\Policies\\Microsoft\\Windows\\Control Panel\\Desktop",
         "path": "HKU\\PLACEHOLDER",
@@ -151,7 +151,7 @@
         "type": "REG_SZ",
         "expected_value": "1"
       },
-      "validation_note": "Enumerate interactive user SIDs and compare each SID value to 1."
+      "validation_note": "Enumerate local user profiles, including signed-out users loaded from NTUSER.DAT, and compare each SID value to 1."
     },
     {
       "id": "19.7.41.1",
@@ -167,7 +167,7 @@
         "type": "REG_DWORD",
         "expected_value": 0
       },
-      "validation_note": "Enumerate interactive user SIDs and compare each SID value to 0."
+      "validation_note": "Enumerate local user profiles, including signed-out users loaded from NTUSER.DAT, and compare each SID value to 0."
     },
     {
       "id": "password-policy-level1",

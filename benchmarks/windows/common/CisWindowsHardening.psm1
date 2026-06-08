@@ -112,38 +112,191 @@ function Get-CisInteractiveUserSids {
         Select-Object -ExpandProperty PSChildName
 }
 
-function Invoke-CisUserRegistryPolicy {
-    param(
-        [Parameter(Mandatory)] [pscustomobject] $Control,
-        [switch] $WhatIf
-    )
+function ConvertTo-CisOfflineHiveName {
+    param([Parameter(Mandatory)] [string] $Identity)
 
-    $userSids = @(Get-CisInteractiveUserSids)
-    foreach ($sid in $userSids) {
-        $copy = $Control.PSObject.Copy()
-        $copy.registry = $Control.registry.PSObject.Copy()
-        $copy.registry.path = "HKU\$sid\$($Control.registry.sub_path)"
-        Set-CisRegistryPolicy -Control $copy -WhatIf:$WhatIf
+    $safeName = $Identity -replace '[^A-Za-z0-9_]', '_'
+    return "CIS_OFFLINE_$safeName"
+}
+
+function Get-CisUserProfileTargets {
+    $sidPattern = '^S-1-5-21-.+-\d+$'
+    $loadedSids = @(Get-CisInteractiveUserSids)
+    $seen = @{}
+    $targets = New-Object System.Collections.Generic.List[object]
+
+    $profiles = @(Get-CimInstance -ClassName Win32_UserProfile |
+        Where-Object {
+            $_.SID -match $sidPattern -and
+            -not $_.Special -and
+            $_.LocalPath -and
+            (Test-Path -LiteralPath (Join-Path $_.LocalPath 'NTUSER.DAT'))
+        })
+
+    foreach ($profile in $profiles) {
+        $isLoaded = $loadedSids -contains $profile.SID
+        $targets.Add([pscustomobject]@{
+            Sid = $profile.SID
+            LocalPath = $profile.LocalPath
+            HiveFile = Join-Path $profile.LocalPath 'NTUSER.DAT'
+            RegistryKeyName = if ($isLoaded) { $profile.SID } else { ConvertTo-CisOfflineHiveName -Identity $profile.SID }
+            IsLoaded = $isLoaded
+            IsDefaultProfile = $false
+        })
+        $seen[$profile.SID] = $true
+    }
+
+    foreach ($sid in $loadedSids) {
+        if (-not $seen.ContainsKey($sid)) {
+            $targets.Add([pscustomobject]@{
+                Sid = $sid
+                LocalPath = $null
+                HiveFile = $null
+                RegistryKeyName = $sid
+                IsLoaded = $true
+                IsDefaultProfile = $false
+            })
+        }
     }
 
     $defaultHive = Join-Path $env:SystemDrive 'Users\Default\NTUSER.DAT'
     if (Test-Path -LiteralPath $defaultHive) {
-        $loaded = Test-Path -LiteralPath 'Registry::HKEY_USERS\CIS_DEFAULT_USER'
-        if (-not $loaded -and -not $WhatIf) {
-            & reg.exe load 'HKU\CIS_DEFAULT_USER' $defaultHive | Out-Null
+        $targets.Add([pscustomobject]@{
+            Sid = 'DEFAULT_PROFILE'
+            LocalPath = Join-Path $env:SystemDrive 'Users\Default'
+            HiveFile = $defaultHive
+            RegistryKeyName = 'CIS_DEFAULT_USER'
+            IsLoaded = Test-Path -LiteralPath 'Registry::HKEY_USERS\CIS_DEFAULT_USER'
+            IsDefaultProfile = $true
+        })
+    }
+
+    return $targets
+}
+
+function Mount-CisUserProfileHive {
+    param(
+        [Parameter(Mandatory)] [pscustomobject] $Target,
+        [switch] $WhatIf
+    )
+
+    $registryPath = "HKU\$($Target.RegistryKeyName)"
+    $providerPath = "Registry::HKEY_USERS\$($Target.RegistryKeyName)"
+    if ($Target.IsLoaded -or (Test-Path -LiteralPath $providerPath)) {
+        return [pscustomobject]@{
+            RegistryPath = $registryPath
+            ProviderPath = $providerPath
+            ShouldUnload = $false
+            Status = 'loaded'
         }
+    }
+
+    if (-not $Target.HiveFile) {
+        return [pscustomobject]@{
+            RegistryPath = $registryPath
+            ProviderPath = $providerPath
+            ShouldUnload = $false
+            Status = 'missing-hive-file'
+        }
+    }
+
+    if ($WhatIf) {
+        Write-Information "Would load offline user hive $($Target.HiveFile) into $registryPath." -InformationAction Continue
+        return [pscustomobject]@{
+            RegistryPath = $registryPath
+            ProviderPath = $providerPath
+            ShouldUnload = $false
+            Status = 'whatif-offline-hive-not-loaded'
+        }
+    }
+
+    & reg.exe load $registryPath $Target.HiveFile | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        return [pscustomobject]@{
+            RegistryPath = $registryPath
+            ProviderPath = $providerPath
+            ShouldUnload = $false
+            Status = "load-failed-$LASTEXITCODE"
+        }
+    }
+
+    return [pscustomobject]@{
+        RegistryPath = $registryPath
+        ProviderPath = $providerPath
+        ShouldUnload = $true
+        Status = 'loaded-offline'
+    }
+}
+
+function Dismount-CisUserProfileHive {
+    param([Parameter(Mandatory)] [pscustomobject] $Mount)
+
+    if (-not $Mount.ShouldUnload) {
+        return
+    }
+
+    [gc]::Collect()
+    [gc]::WaitForPendingFinalizers()
+    & reg.exe unload $Mount.RegistryPath | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to unload offline user hive $($Mount.RegistryPath); reg.exe exited with $LASTEXITCODE."
+    }
+}
+
+function Invoke-CisUserRegistryPolicy {
+    param(
+        [Parameter(Mandatory)] [pscustomobject] $Control,
+        [switch] $Apply,
+        [switch] $WhatIf
+    )
+
+    $results = New-Object System.Collections.Generic.List[object]
+    $targets = @(Get-CisUserProfileTargets)
+
+    foreach ($target in $targets) {
+        $mount = Mount-CisUserProfileHive -Target $target -WhatIf:$WhatIf
+        if ($mount.Status -like 'load-failed-*' -or $mount.Status -eq 'missing-hive-file') {
+            $results.Add([pscustomobject]@{
+                id = $Control.id
+                title = $Control.title
+                status = 'fail'
+                target = $target.Sid
+                hive_status = $mount.Status
+                evidence = $target.HiveFile
+            })
+            continue
+        }
+
         try {
             $copy = $Control.PSObject.Copy()
             $copy.registry = $Control.registry.PSObject.Copy()
-            $copy.registry.path = "HKU\CIS_DEFAULT_USER\$($Control.registry.sub_path)"
-            Set-CisRegistryPolicy -Control $copy -WhatIf:$WhatIf
-        } finally {
-            if (-not $loaded -and -not $WhatIf) {
-                [gc]::Collect()
-                & reg.exe unload 'HKU\CIS_DEFAULT_USER' | Out-Null
+            $copy.registry.path = "$($mount.RegistryPath)\$($Control.registry.sub_path)"
+
+            if ($Apply) {
+                Set-CisRegistryPolicy -Control $copy -WhatIf:$WhatIf
             }
+
+            $result = if ($Apply -and $WhatIf) {
+                [pscustomobject]@{
+                    id = $Control.id
+                    title = $Control.title
+                    status = 'whatif'
+                    target = $target.Sid
+                    hive_status = $mount.Status
+                    evidence = "$($copy.registry.path)::$($copy.registry.name)"
+                }
+            } else {
+                Test-CisRegistryPolicy -Control $copy
+            }
+            $result | Add-Member -NotePropertyName target -NotePropertyValue $target.Sid -Force
+            $result | Add-Member -NotePropertyName hive_status -NotePropertyValue $mount.Status -Force
+            $results.Add($result)
+        } finally {
+            Dismount-CisUserProfileHive -Mount $mount
         }
     }
+
+    return $results
 }
 
 function Import-CisSecurityTemplate {
@@ -190,10 +343,16 @@ function Invoke-CisControls {
             continue
         }
 
+        if ($control.scope -eq 'user') {
+            $userResults = Invoke-CisUserRegistryPolicy -Control $control -Apply:($Mode -eq 'Remediate') -WhatIf:$WhatIf
+            foreach ($userResult in $userResults) {
+                $results.Add($userResult)
+            }
+            continue
+        }
+
         if ($Mode -eq 'Remediate') {
-            if ($control.scope -eq 'user') {
-                Invoke-CisUserRegistryPolicy -Control $control -WhatIf:$WhatIf
-            } elseif ($control.type -eq 'security_template') {
+            if ($control.type -eq 'security_template') {
                 $templatePath = $control.template_path
                 if (-not [System.IO.Path]::IsPathRooted($templatePath)) {
                     $templatePath = Join-Path (Split-Path -Parent $ControlsPath) $templatePath
@@ -227,4 +386,4 @@ function Invoke-CisControls {
     return $results
 }
 
-Export-ModuleMember -Function Test-IsAdministrator,Get-WindowsEditionAndBuild,Assert-CisSupportedWindowsTarget,Set-CisRegistryPolicy,Test-CisRegistryPolicy,Get-CisInteractiveUserSids,Invoke-CisUserRegistryPolicy,Import-CisSecurityTemplate,Invoke-CisControls
+Export-ModuleMember -Function Test-IsAdministrator,Get-WindowsEditionAndBuild,Assert-CisSupportedWindowsTarget,Set-CisRegistryPolicy,Test-CisRegistryPolicy,Get-CisInteractiveUserSids,ConvertTo-CisOfflineHiveName,Get-CisUserProfileTargets,Mount-CisUserProfileHive,Dismount-CisUserProfileHive,Invoke-CisUserRegistryPolicy,Import-CisSecurityTemplate,Invoke-CisControls

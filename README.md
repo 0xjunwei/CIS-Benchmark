@@ -86,7 +86,7 @@ Windows controls are represented as JSON metadata instead of raw, one-way `reg a
 - Validation note.
 - Implementation status: `automated`, `manual`, `organization_defined`, `not_applicable`, or `unsupported`.
 
-The PowerShell module applies machine-scope settings through the registry provider and handles user-scope settings by enumerating real interactive user SIDs under `HKEY_USERS` and updating the default profile. This replaces the previous invalid pattern of writing to `HKU\Software\...`.
+The PowerShell module applies machine-scope settings through the registry provider and handles user-scope settings by enumerating existing local profiles with `Win32_UserProfile`, applying settings to loaded user hives, temporarily loading signed-out users' `NTUSER.DAT` hives under `HKEY_USERS`, and updating the default profile for future users. This replaces the previous invalid pattern of writing to `HKU\Software\...` and prevents signed-out existing users from being missed.
 
 ## Password policy
 

@@ -9,8 +9,8 @@ $modulePath = Join-Path $PSScriptRoot '..\..\common\CisWindowsHardening.psm1'
 $controlsPath = Join-Path $PSScriptRoot 'controls.windows11.enterprise.level1.json'
 Import-Module $modulePath -Force
 
-if (-not $AuditOnly -and -not (Test-IsAdministrator)) {
-    throw 'Run this script in an elevated PowerShell session.'
+if (-not (Test-IsAdministrator)) {
+    throw 'Run this script in an elevated PowerShell session so loaded and signed-out user hives can be audited or remediated.'
 }
 
 Assert-CisSupportedWindowsTarget -SupportedCaptionPatterns @('*Windows 11 Enterprise*') -Force:$Force | Out-Null
