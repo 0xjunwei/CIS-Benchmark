@@ -1,0 +1,183 @@
+{
+  "schema_version": "1.0",
+  "last_static_review_utc": "2026-06-08",
+  "policy": {
+    "scope": "All CIS Level 1 and Level 2 profiles tracked for each active system in this repository.",
+    "source_of_truth": "Official CIS benchmark PDFs or Build Kit files obtained by each user under their own CIS terms.",
+    "source_material_committed": false,
+    "validation_boundary": "This matrix validates scaffolding and review status only; it does not certify benchmark accuracy or system compliance."
+  },
+  "profile_status_legend": {
+    "starter_subset_12_controls_not_full_profile": "A small starter subset exists and must be compared against authorized CIS source material.",
+    "scaffold_no_controls_imported": "The profile exists as a safe placeholder with no controls imported.",
+    "delegates_to_canonical_usg_profile": "The wrapper delegates to the named Canonical USG profile instead of embedding controls.",
+    "archived_unsafe_reference_only": "Historical material only; not active support and not safe to run."
+  },
+  "systems": [
+    {
+      "system_id": "windows-11-enterprise",
+      "product": "Microsoft Windows 11 Enterprise",
+      "cis_benchmark_version": "5.0.1",
+      "source_url": "https://www.cisecurity.org/benchmark/microsoft_windows_desktop",
+      "profiles": [
+        {
+          "profile_id": "level1",
+          "profile_name": "Level 1",
+          "controls_file": "benchmarks/windows/desktop/windows-11-enterprise/controls.windows11.enterprise.level1.json",
+          "validation_entrypoint": "benchmarks/windows/desktop/windows-11-enterprise/Test-CisWindows11Profile.ps1 -Profile level1",
+          "remediation_entrypoint": null,
+          "profile_status": "starter_subset_12_controls_not_full_profile",
+          "source_review_status": "needs_authorized_source_review"
+        },
+        {
+          "profile_id": "level2",
+          "profile_name": "Level 2",
+          "controls_file": "benchmarks/windows/desktop/windows-11-enterprise/controls.windows11.enterprise.level2.json",
+          "validation_entrypoint": "benchmarks/windows/desktop/windows-11-enterprise/Test-CisWindows11Profile.ps1 -Profile level2",
+          "remediation_entrypoint": null,
+          "profile_status": "scaffold_no_controls_imported",
+          "source_review_status": "needs_authorized_source_review"
+        }
+      ]
+    },
+    {
+      "system_id": "windows-server-2025",
+      "product": "Microsoft Windows Server 2025",
+      "cis_benchmark_version": "2.0.0",
+      "source_url": "https://www.cisecurity.org/benchmark/microsoft_windows_server/",
+      "profiles": [
+        {
+          "profile_id": "level1-member-server",
+          "profile_name": "Level 1 - Member Server",
+          "controls_file": "benchmarks/windows/server/windows-server-2025/controls.windows-server2025.level1-member-server.json",
+          "validation_entrypoint": "benchmarks/windows/server/windows-server-2025/Test-CisWindowsServer2025Profile.ps1 -Profile level1-member-server",
+          "remediation_entrypoint": null,
+          "profile_status": "scaffold_no_controls_imported",
+          "source_review_status": "needs_authorized_source_review"
+        },
+        {
+          "profile_id": "level2-member-server",
+          "profile_name": "Level 2 - Member Server",
+          "controls_file": "benchmarks/windows/server/windows-server-2025/controls.windows-server2025.level2-member-server.json",
+          "validation_entrypoint": "benchmarks/windows/server/windows-server-2025/Test-CisWindowsServer2025Profile.ps1 -Profile level2-member-server",
+          "remediation_entrypoint": null,
+          "profile_status": "scaffold_no_controls_imported",
+          "source_review_status": "needs_authorized_source_review"
+        },
+        {
+          "profile_id": "level1-domain-controller",
+          "profile_name": "Level 1 - Domain Controller",
+          "controls_file": "benchmarks/windows/server/windows-server-2025/controls.windows-server2025.level1-domain-controller.json",
+          "validation_entrypoint": "benchmarks/windows/server/windows-server-2025/Test-CisWindowsServer2025Profile.ps1 -Profile level1-domain-controller",
+          "remediation_entrypoint": null,
+          "profile_status": "scaffold_no_controls_imported",
+          "source_review_status": "needs_authorized_source_review"
+        },
+        {
+          "profile_id": "level2-domain-controller",
+          "profile_name": "Level 2 - Domain Controller",
+          "controls_file": "benchmarks/windows/server/windows-server-2025/controls.windows-server2025.level2-domain-controller.json",
+          "validation_entrypoint": "benchmarks/windows/server/windows-server-2025/Test-CisWindowsServer2025Profile.ps1 -Profile level2-domain-controller",
+          "remediation_entrypoint": null,
+          "profile_status": "scaffold_no_controls_imported",
+          "source_review_status": "needs_authorized_source_review"
+        }
+      ]
+    },
+    {
+      "system_id": "ubuntu-24.04",
+      "product": "Ubuntu Linux 24.04 LTS",
+      "cis_benchmark_version": "2.0.0",
+      "source_url": "https://www.cisecurity.org/benchmark/ubuntu_linux",
+      "profiles": [
+        {
+          "profile_id": "cis_level1_server",
+          "profile_name": "Level 1 Server",
+          "validation_entrypoint": "benchmarks/linux/ubuntu/24.04/cis-ubuntu-24.04.sh --audit --profile cis_level1_server",
+          "remediation_entrypoint": "benchmarks/linux/ubuntu/24.04/cis-ubuntu-24.04.sh --remediate --yes --profile cis_level1_server",
+          "profile_status": "delegates_to_canonical_usg_profile",
+          "source_review_status": "needs_authorized_source_review"
+        },
+        {
+          "profile_id": "cis_level2_server",
+          "profile_name": "Level 2 Server",
+          "validation_entrypoint": "benchmarks/linux/ubuntu/24.04/cis-ubuntu-24.04.sh --audit --profile cis_level2_server",
+          "remediation_entrypoint": "benchmarks/linux/ubuntu/24.04/cis-ubuntu-24.04.sh --remediate --yes --profile cis_level2_server",
+          "profile_status": "delegates_to_canonical_usg_profile",
+          "source_review_status": "needs_authorized_source_review"
+        },
+        {
+          "profile_id": "cis_level1_workstation",
+          "profile_name": "Level 1 Workstation",
+          "validation_entrypoint": "benchmarks/linux/ubuntu/24.04/cis-ubuntu-24.04.sh --audit --profile cis_level1_workstation",
+          "remediation_entrypoint": "benchmarks/linux/ubuntu/24.04/cis-ubuntu-24.04.sh --remediate --yes --profile cis_level1_workstation",
+          "profile_status": "delegates_to_canonical_usg_profile",
+          "source_review_status": "needs_authorized_source_review"
+        },
+        {
+          "profile_id": "cis_level2_workstation",
+          "profile_name": "Level 2 Workstation",
+          "validation_entrypoint": "benchmarks/linux/ubuntu/24.04/cis-ubuntu-24.04.sh --audit --profile cis_level2_workstation",
+          "remediation_entrypoint": "benchmarks/linux/ubuntu/24.04/cis-ubuntu-24.04.sh --remediate --yes --profile cis_level2_workstation",
+          "profile_status": "delegates_to_canonical_usg_profile",
+          "source_review_status": "needs_authorized_source_review"
+        }
+      ]
+    },
+    {
+      "system_id": "ubuntu-22.04",
+      "product": "Ubuntu Linux 22.04 LTS",
+      "cis_benchmark_version": "3.0.0",
+      "source_url": "https://www.cisecurity.org/benchmark/ubuntu_linux",
+      "profiles": [
+        {
+          "profile_id": "cis_level1_server",
+          "profile_name": "Level 1 Server",
+          "validation_entrypoint": "benchmarks/linux/ubuntu/22.04/cis-ubuntu-22.04.sh --audit --profile cis_level1_server",
+          "remediation_entrypoint": "benchmarks/linux/ubuntu/22.04/cis-ubuntu-22.04.sh --remediate --yes --profile cis_level1_server",
+          "profile_status": "delegates_to_canonical_usg_profile",
+          "source_review_status": "needs_authorized_source_review"
+        },
+        {
+          "profile_id": "cis_level2_server",
+          "profile_name": "Level 2 Server",
+          "validation_entrypoint": "benchmarks/linux/ubuntu/22.04/cis-ubuntu-22.04.sh --audit --profile cis_level2_server",
+          "remediation_entrypoint": "benchmarks/linux/ubuntu/22.04/cis-ubuntu-22.04.sh --remediate --yes --profile cis_level2_server",
+          "profile_status": "delegates_to_canonical_usg_profile",
+          "source_review_status": "needs_authorized_source_review"
+        },
+        {
+          "profile_id": "cis_level1_workstation",
+          "profile_name": "Level 1 Workstation",
+          "validation_entrypoint": "benchmarks/linux/ubuntu/22.04/cis-ubuntu-22.04.sh --audit --profile cis_level1_workstation",
+          "remediation_entrypoint": "benchmarks/linux/ubuntu/22.04/cis-ubuntu-22.04.sh --remediate --yes --profile cis_level1_workstation",
+          "profile_status": "delegates_to_canonical_usg_profile",
+          "source_review_status": "needs_authorized_source_review"
+        },
+        {
+          "profile_id": "cis_level2_workstation",
+          "profile_name": "Level 2 Workstation",
+          "validation_entrypoint": "benchmarks/linux/ubuntu/22.04/cis-ubuntu-22.04.sh --audit --profile cis_level2_workstation",
+          "remediation_entrypoint": "benchmarks/linux/ubuntu/22.04/cis-ubuntu-22.04.sh --remediate --yes --profile cis_level2_workstation",
+          "profile_status": "delegates_to_canonical_usg_profile",
+          "source_review_status": "needs_authorized_source_review"
+        }
+      ]
+    },
+    {
+      "system_id": "windows-10-enterprise-legacy",
+      "product": "Microsoft Windows 10 Enterprise",
+      "cis_benchmark_version": "historical-unverified",
+      "source_url": "https://www.cisecurity.org/benchmark/microsoft_windows_desktop",
+      "profiles": [
+        {
+          "profile_id": "legacy-level1",
+          "profile_name": "Legacy Level 1 material",
+          "archive_path": "legacy/windows-10-enterprise/",
+          "profile_status": "archived_unsafe_reference_only",
+          "source_review_status": "not_implemented"
+        }
+      ]
+    }
+  ]
+}

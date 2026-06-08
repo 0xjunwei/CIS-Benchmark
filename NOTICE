@@ -1,0 +1,9 @@
+CIS Benchmark-Aligned Hardening Framework
+
+This repository is distributed under the Apache License 2.0.
+
+This project is not affiliated with, endorsed by, sponsored by, certified by, or otherwise approved by the Center for Internet Security, Inc. (CIS), Canonical, Microsoft, or any operating system vendor.
+
+CIS, CIS Benchmarks, CIS-CAT, Microsoft, Windows, Canonical, Ubuntu, and related names may be trademarks or registered trademarks of their respective owners. Their use in this repository is only to identify the public benchmark target, operating system, or vendor-supported tooling being discussed.
+
+Official CIS Benchmarks, CIS Build Kits, CIS-CAT Pro output, vendor scanner exports, and licensed benchmark text are not included in this repository and remain subject to their own terms.

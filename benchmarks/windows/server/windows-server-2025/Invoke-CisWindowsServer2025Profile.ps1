@@ -1,5 +1,6 @@
 [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
 param(
+    [ValidateSet('level1-member-server','level2-member-server','level1-domain-controller','level2-domain-controller')] [string] $Profile = 'level1-member-server',
     [switch] $Force,
     [switch] $Remediate,
     [switch] $IncludeOfflineUserHives,
@@ -7,24 +8,31 @@ param(
 )
 
 $modulePath = Join-Path $PSScriptRoot '..\..\common\CisWindowsHardening.psm1'
-$controlsPath = Join-Path $PSScriptRoot 'controls.windows11.enterprise.level1.json'
+$profileControls = @{
+    'level1-member-server' = 'controls.windows-server2025.level1-member-server.json'
+    'level2-member-server' = 'controls.windows-server2025.level2-member-server.json'
+    'level1-domain-controller' = 'controls.windows-server2025.level1-domain-controller.json'
+    'level2-domain-controller' = 'controls.windows-server2025.level2-domain-controller.json'
+}
+$controlsPath = Join-Path $PSScriptRoot $profileControls[$Profile]
 Import-Module $modulePath -Force
 
 if (-not (Test-IsAdministrator)) {
     throw 'Run this script in an elevated PowerShell session. Add -IncludeOfflineUserHives only when signed-out and default profile hive access is approved.'
 }
 
-Assert-CisSupportedWindowsTarget -SupportedCaptionPatterns @('*Windows 11 Enterprise*') -Force:$Force | Out-Null
+Assert-CisSupportedWindowsTarget -SupportedCaptionPatterns @('*Windows Server 2025*') -Force:$Force | Out-Null
 $mode = if ($Remediate) { 'Remediate' } else { 'Audit' }
 $controlMetadata = Get-Content -LiteralPath $controlsPath -Raw | ConvertFrom-Json
 if ($Remediate -and ($controlMetadata.coverage_status -eq 'scaffold_no_controls_imported' -or @($controlMetadata.controls).Count -eq 0)) {
-    throw 'Remediation is disabled for scaffold-only or empty Windows 11 Level 1 starter controls.'
+    throw "Remediation is disabled for scaffold-only or empty profile '$Profile'."
 }
 if ($Remediate -and $controlMetadata.source_comparison.status -ne 'reviewed_against_authorized_source') {
-    throw 'Remediation is disabled until Windows 11 Level 1 starter controls are reviewed against authorized CIS source material.'
+    throw "Remediation is disabled until profile '$Profile' is reviewed against authorized CIS source material."
 }
 if (-not $ReportPath) {
-    $ReportPath = if ($Remediate) { "reports/windows/windows-11-enterprise/level1-remediation.json" } else { "reports/windows/windows-11-enterprise/level1-audit.json" }
+    $reportName = if ($Remediate) { 'remediation' } else { 'audit' }
+    $ReportPath = "reports/windows/windows-server-2025/$Profile-$reportName.json"
 }
 $repoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..\..\..')).Path
 if (-not [System.IO.Path]::IsPathRooted($ReportPath)) {
@@ -33,7 +41,7 @@ if (-not [System.IO.Path]::IsPathRooted($ReportPath)) {
 
 $previewOnly = $false
 if ($Remediate) {
-    $approved = $PSCmdlet.ShouldProcess('Windows 11 Enterprise Level 1 starter controls', 'Apply remediation')
+    $approved = $PSCmdlet.ShouldProcess("Windows Server 2025 $Profile controls", 'Apply remediation')
     if (-not $approved -and -not $WhatIfPreference) {
         return
     }

@@ -1,8 +1,9 @@
-[CmdletBinding(SupportsShouldProcess)]
+[CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
 param(
     [switch] $Force,
-    [switch] $AuditOnly,
-    [string] $ReportPath = "reports/windows/windows-server-2025/level1-results.json"
+    [switch] $Remediate,
+    [switch] $IncludeOfflineUserHives,
+    [string] $ReportPath
 )
 
 $modulePath = Join-Path $PSScriptRoot '..\..\common\CisWindowsHardening.psm1'
@@ -10,9 +11,33 @@ $controlsPath = Join-Path $PSScriptRoot 'controls.windows-server2025.level1.json
 Import-Module $modulePath -Force
 
 if (-not (Test-IsAdministrator)) {
-    throw 'Run this script in an elevated PowerShell session so loaded and signed-out user hives can be audited or remediated.'
+    throw 'Run this script in an elevated PowerShell session. Add -IncludeOfflineUserHives only when signed-out and default profile hive access is approved.'
 }
 
 Assert-CisSupportedWindowsTarget -SupportedCaptionPatterns @('*Windows Server 2025*') -Force:$Force | Out-Null
-$mode = if ($AuditOnly) { 'Audit' } else { 'Remediate' }
-Invoke-CisControls -ControlsPath $controlsPath -Mode $mode -WhatIf:$WhatIfPreference -ReportPath $ReportPath
+$mode = if ($Remediate) { 'Remediate' } else { 'Audit' }
+$controlMetadata = Get-Content -LiteralPath $controlsPath -Raw | ConvertFrom-Json
+if ($Remediate -and ($controlMetadata.coverage_status -eq 'scaffold_no_controls_imported' -or @($controlMetadata.controls).Count -eq 0)) {
+    throw 'Remediation is disabled for scaffold-only or empty Windows Server 2025 Level 1 starter controls.'
+}
+if ($Remediate -and $controlMetadata.source_comparison.status -ne 'reviewed_against_authorized_source') {
+    throw 'Remediation is disabled until Windows Server 2025 Level 1 starter controls are reviewed against authorized CIS source material.'
+}
+if (-not $ReportPath) {
+    $ReportPath = if ($Remediate) { "reports/windows/windows-server-2025/level1-remediation.json" } else { "reports/windows/windows-server-2025/level1-audit.json" }
+}
+$repoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..\..\..')).Path
+if (-not [System.IO.Path]::IsPathRooted($ReportPath)) {
+    $ReportPath = Join-Path $repoRoot $ReportPath
+}
+
+$previewOnly = $false
+if ($Remediate) {
+    $approved = $PSCmdlet.ShouldProcess('Windows Server 2025 Level 1 starter controls', 'Apply remediation')
+    if (-not $approved -and -not $WhatIfPreference) {
+        return
+    }
+    $previewOnly = -not $approved
+}
+
+Invoke-CisControls -ControlsPath $controlsPath -Mode $mode -WhatIf:($WhatIfPreference -or $previewOnly) -Confirm:$false -IncludeOfflineUserHives:$IncludeOfflineUserHives -ReportPath $ReportPath

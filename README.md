@@ -1,147 +1,233 @@
-# CIS Benchmark Hardening Framework
+# CIS Benchmark-Aligned Hardening Framework
 
-This repository began as a Windows 10 CIS Level 1 batch file. It now provides a safer framework for building auditable CIS Benchmark remediation variants across Windows and Linux without redistributing CIS benchmark content.
+This repository is a community hardening framework for building auditable, reviewable remediation helpers inspired by CIS Benchmarks. It is not an official CIS product, not a Canonical product, and not compliance evidence by itself.
 
-> **Warning**
-> These scripts and framework changes were generated with Codex and have not yet been tested on production Windows or Linux systems. Treat them as unvalidated starter automation: review every control, test in an isolated lab, create backups/rollback plans, and confirm results with authorized CIS audit tooling before using them to harden real assets.
+> Warning: Do not run these scripts on a workstation, server, or production asset until you have reviewed every control against the official CIS source material you are licensed to use, tested in an isolated lab, captured backups, and created a rollback plan.
 
-## Important compliance note
+## Compliance Boundary
 
-Running a hardening script is not the same as passing a CIS audit. Treat every run as a change-control event:
+Running a script is not the same as passing a CIS audit. Treat every run as a change-control event:
 
-1. Run an audit first and save evidence.
-2. Back up local policy and relevant system state.
-3. Apply remediation in a lab or pilot group.
-4. Reboot when a control requires it.
-5. Run the matching audit profile again.
-6. Use CIS-CAT Pro, vendor-supported tooling, or another authorized scanner for formal audit evidence.
+1. Download the official CIS Benchmark PDF or Build Kit under your own CIS terms.
+2. Compare local metadata against that authorized source.
+3. Run a scanner or vendor-supported tool in a lab first.
+4. Back up local policy and system state.
+5. Apply remediation only after explicit approval.
+6. Validate again with CIS-CAT Pro, vendor-supported tooling, or another authorized scanner.
 
-The scripts in this repository store implementation metadata, checks, and links. Download official CIS Benchmarks from CIS under the applicable license/terms and import only controls you are authorized to use.
+This project stores implementation metadata, wrapper logic, and links. Do not commit CIS PDFs, Build Kits, scanner exports, or other licensed source material.
 
-## Supported benchmark matrix
+## Benchmark Matrix
 
-The current manifest is in `benchmarks/manifest.json` and was verified on 2026-06-08 against official CIS benchmark pages.
+The manifest in `benchmarks/manifest.json` is the source of truth for tracked targets. The full Level 1/Level 2 profile inventory is tracked in `benchmarks/profile-matrix.json`.
 
-| Target | CIS benchmark version | Entry point | Status |
+| Target | Version status | Entry point | Coverage status |
 | --- | --- | --- | --- |
-| Microsoft Windows 11 Enterprise | 5.0.1 | `benchmarks/windows/desktop/windows-11-enterprise/Invoke-CisWindows11Level1.ps1` | Framework-ready; needs full authorized control import before claiming full compliance |
-| Microsoft Windows Server 2025 | 2.0.0 | `benchmarks/windows/server/windows-server-2025/Invoke-CisWindowsServer2025Level1.ps1` | Framework-ready; needs full authorized control import before claiming full compliance |
-| Ubuntu Linux 24.04 LTS | 2.0.0 | `benchmarks/linux/ubuntu/24.04/cis-ubuntu-24.04.sh` | Wrapper-ready; prefers Ubuntu Security Guide / authorized scanner |
-| Ubuntu Linux 22.04 LTS | 3.0.0 | `benchmarks/linux/ubuntu/22.04/cis-ubuntu-22.04.sh` | Wrapper-ready; prefers Ubuntu Security Guide / authorized scanner |
-| Windows 10 Enterprise legacy | historical | `CIS LEVEL 1.bat` | Historical reference only |
+| Microsoft Windows 11 Enterprise | 5.0.1 claim pending authorized-source comparison | `benchmarks/windows/desktop/windows-11-enterprise/Invoke-CisWindows11Profile.ps1 -Profile <level1|level2>` | Level 1 starter subset; Level 2 scaffold |
+| Microsoft Windows Server 2025 | 2.0.0 claim pending authorized-source comparison | `benchmarks/windows/server/windows-server-2025/Invoke-CisWindowsServer2025Profile.ps1 -Profile <profile>` | Level 1/2 Member Server and Domain Controller scaffolds |
+| Ubuntu Linux 24.04 LTS | 2.0.0 claim pending authorized-source comparison | `benchmarks/linux/ubuntu/24.04/cis-ubuntu-24.04.sh` | Delegates to Canonical USG profile selected at runtime |
+| Ubuntu Linux 22.04 LTS | 3.0.0 claim pending authorized-source comparison | `benchmarks/linux/ubuntu/22.04/cis-ubuntu-22.04.sh` | Delegates to Canonical USG profile selected at runtime |
 
-## Repository layout
+Legacy Windows 10 support is inactive. Unsafe historical root artifacts are deleted from the publishable repository; any local legacy source/manual copies must stay ignored and are not safe-to-run remediation.
+
+## Profile Levels
+
+All active systems now have safe profile scaffolding for their CIS Level 1 and Level 2 variants:
+
+- Windows 11 Enterprise: Level 1 and Level 2.
+- Windows Server 2025: Level 1 Member Server, Level 2 Member Server, Level 1 Domain Controller, and Level 2 Domain Controller.
+- Ubuntu 24.04 and Ubuntu 22.04: `cis_level1_server`, `cis_level2_server`, `cis_level1_workstation`, and `cis_level2_workstation`.
+
+Missing Windows profiles are scaffolds with empty control lists until authorized CIS source material is reviewed. Ubuntu profiles delegate to Canonical USG and must still be validated against the installed USG profile and official CIS source material before they are treated as accurate.
+
+Windows profile entrypoints are:
+
+```powershell
+.\benchmarks\windows\desktop\windows-11-enterprise\Test-CisWindows11Profile.ps1 -Profile level2
+.\benchmarks\windows\server\windows-server-2025\Test-CisWindowsServer2025Profile.ps1 -Profile level2-member-server
+.\benchmarks\windows\server\windows-server-2025\Test-CisWindowsServer2025Profile.ps1 -Profile level2-domain-controller
+```
+
+These commands are examples for future lab use; they were not run during repository preparation.
+
+## Repository Layout
 
 ```text
 benchmarks/
   manifest.json
   windows/
     common/
-      CisWindowsHardening.psm1
-      password-policy-level1.inf
     desktop/windows-11-enterprise/
     server/windows-server-2025/
   linux/ubuntu/24.04/
   linux/ubuntu/22.04/
+legacy/windows-10-enterprise/
 reports/
+tools/
 ```
 
-## Windows usage
+## Status Legend
 
-Open an elevated PowerShell session on the target OS.
+- `pass`: A local automated check matched the expected metadata value.
+- `fail`: A local automated check did not match the expected metadata value.
+- `organization_defined`: Local policy decision required; not a pass result.
+- `manual-validation-required`: Automation did not validate the control.
+- `remediated-needs-validation`: A remediation path was invoked, but separate authorized validation is required.
+- `whatif`: Preview only; no remediation should have been applied.
+- `needs_authorized_source_review`: Must be checked against official CIS source material before it is treated as accurate.
+- `reviewed_against_authorized_source`: A maintainer recorded an authorized-source comparison.
+- `mismatch`: Local metadata differs from the authorized source.
+- `not_implemented`: Tracked but not implemented.
+- `scaffold_no_controls_imported`: The profile exists, but no controls have been imported or validated.
 
-Audit only:
+## Windows Usage
+
+Open an elevated PowerShell session on the target OS. The `Invoke-*` entrypoints now default to audit mode. Signed-out user hives and the default profile are not loaded unless `-IncludeOfflineUserHives` is supplied.
+
+Audit Windows 11 starter controls:
 
 ```powershell
-.\benchmarks\windows\desktop\windows-11-enterprise\Test-CisWindows11Level1.ps1
+.\benchmarks\windows\desktop\windows-11-enterprise\Invoke-CisWindows11Profile.ps1 -Profile level1
 ```
 
-Remediate Windows 11 Enterprise Level 1 starter controls:
+Windows remediation is disabled while a profile or automated control is still marked `needs_authorized_source_review`, `organization_defined`, `mismatch`, or `not_implemented`. Only profiles whose control mappings are recorded as `reviewed_against_authorized_source` should advertise remediation, and those paths still require explicit `-Remediate` plus PowerShell `ShouldProcess` approval.
+
+Windows Server 2025 role/profile scaffolds use the matching server folder. These scaffold profiles have no imported controls yet and should be used for source-review preparation only:
 
 ```powershell
-.\benchmarks\windows\desktop\windows-11-enterprise\Invoke-CisWindows11Level1.ps1
+.\benchmarks\windows\server\windows-server-2025\Invoke-CisWindowsServer2025Profile.ps1 -Profile level1-member-server
+.\benchmarks\windows\server\windows-server-2025\Invoke-CisWindowsServer2025Profile.ps1 -Profile level2-domain-controller
 ```
 
-Preview changes without applying them:
+The Windows scripts perform OS caption checks and refuse unsupported targets unless `-Force` is supplied. Use `-Force` only after confirming the benchmark applies to the host.
 
-```powershell
-.\benchmarks\windows\desktop\windows-11-enterprise\Invoke-CisWindows11Level1.ps1 -WhatIf
-```
+## Windows Control Model
 
-Windows Server 2025 uses the matching server folder:
+Windows controls are represented as JSON metadata rather than raw one-way registry commands. Each control records implementation status and source review status. Current Windows metadata is a starter subset only; do not describe it as full Level 1 coverage.
 
-```powershell
-.\benchmarks\windows\server\windows-server-2025\Test-CisWindowsServer2025Level1.ps1
-.\benchmarks\windows\server\windows-server-2025\Invoke-CisWindowsServer2025Level1.ps1
-```
+Windows report files include benchmark ID, coverage status, source comparison metadata, a status legend, and per-control `source_review_status`. Treat `pass` as a local metadata check only, not as proof that the CIS source mapping is accurate or that the system is compliant.
 
-The scripts perform OS caption checks and refuse unsupported targets unless `-Force` is supplied. Use `-Force` only after confirming the benchmark applies to the host.
+The shared Windows module rejects remediation for scaffold-only profiles, empty control sets, and any control set whose source comparison status is not `reviewed_against_authorized_source`.
 
-## Windows control model
+Windows report paths must stay under this repository's `reports/` directory. External report paths are rejected to avoid scattering helper evidence or accidentally publishing sensitive system details.
 
-Windows controls are represented as JSON metadata instead of raw, one-way `reg add` commands. Each automated registry control includes:
+User-scope controls apply to loaded interactive user hives by default. Add `-IncludeOfflineUserHives` only when the change window explicitly allows temporary loading of signed-out profile hives and the default profile.
 
-- CIS control identifier.
-- Title.
-- Machine or user scope.
-- Registry path, value name, type, and expected value.
-- Attack-surface reduction rationale.
-- Validation note.
-- Implementation status: `automated`, `manual`, `organization_defined`, `not_applicable`, or `unsupported`.
+The password policy template is an aggregate starter control. It requires separate validation with `secedit` export, `net accounts`, CIS-CAT Pro, or another authorized scanner.
 
-The PowerShell module applies machine-scope settings through the registry provider and handles user-scope settings by enumerating existing local profiles with `Win32_UserProfile`, applying settings to loaded user hives, temporarily loading signed-out users' `NTUSER.DAT` hives under `HKEY_USERS`, and updating the default profile for future users. This replaces the previous invalid pattern of writing to `HKU\Software\...` and prevents signed-out existing users from being missed.
+## Ubuntu Usage
 
-## Password policy
+The Ubuntu wrappers delegate to Canonical Ubuntu Security Guide (`usg`) profiles. They do not embed CIS benchmark controls. The default profile is `cis_level1_server`, and the selected profile is written into the wrapper report.
 
-The legacy `password policy.inf` is now represented as `benchmarks/windows/common/password-policy-level1.inf` and can be imported by the PowerShell framework with `secedit`. In a domain-joined environment, domain Group Policy may override local security policy; validate effective policy after Group Policy refresh.
+Supported profile names are:
 
-## Linux / Ubuntu usage
-
-The Ubuntu wrappers intentionally prefer Canonical Ubuntu Security Guide (`usg`) or an authorized scanner instead of embedding CIS benchmark text.
+- `cis_level1_server`
+- `cis_level2_server`
+- `cis_level1_workstation`
+- `cis_level2_workstation`
 
 Audit Ubuntu 24.04:
 
 ```bash
-./benchmarks/linux/ubuntu/24.04/cis-ubuntu-24.04.sh --audit
+sudo ./benchmarks/linux/ubuntu/24.04/cis-ubuntu-24.04.sh --audit
 ```
 
-Remediate Ubuntu 24.04:
+Preview Ubuntu 24.04 remediation:
 
 ```bash
-sudo ./benchmarks/linux/ubuntu/24.04/cis-ubuntu-24.04.sh --remediate
+sudo ./benchmarks/linux/ubuntu/24.04/cis-ubuntu-24.04.sh --remediate --dry-run --yes
 ```
 
-Audit Ubuntu 22.04:
+The `--yes` flag acknowledges remediation mode even for dry-run previews; dry-run prints the intended `usg fix` command without applying it.
+
+Apply Ubuntu 24.04 remediation only after lab testing and approval:
 
 ```bash
-./benchmarks/linux/ubuntu/22.04/cis-ubuntu-22.04.sh --audit
+sudo ./benchmarks/linux/ubuntu/24.04/cis-ubuntu-24.04.sh --remediate --yes
 ```
 
-Remediate Ubuntu 22.04:
+Ubuntu 22.04 uses the matching folder:
 
 ```bash
-sudo ./benchmarks/linux/ubuntu/22.04/cis-ubuntu-22.04.sh --remediate
+sudo ./benchmarks/linux/ubuntu/22.04/cis-ubuntu-22.04.sh --audit
+sudo ./benchmarks/linux/ubuntu/22.04/cis-ubuntu-22.04.sh --remediate --dry-run --yes
 ```
 
-If `usg` is not installed, the wrapper writes a report explaining that vendor-supported CIS tooling or an authorized scanner is required.
+Canonical USG may generate authoritative HTML/XML artifacts under `/var/lib/usg/`; the text report in this repository is a helper capture, not formal compliance evidence.
 
-## Rollout guidance
+## Accuracy Workflow
 
-- Test every profile in a lab before production.
-- Confirm application compatibility, especially for authentication, SMB, firewall, UAC, and exploit-mitigation settings.
-- Export current local security policy and critical registry paths before remediation.
-- Expect some controls to require reboot or sign-out/sign-in.
-- Document all `organization_defined` controls before enforcing them.
-- Prefer centralized Group Policy / MDM for domain or enterprise fleets.
-- Keep benchmark versions in `benchmarks/manifest.json` current as CIS publishes updates.
+Authorized source files should stay outside this repository working tree. `.gitignore` also blocks defensive local folder names such as `authorized-sources/` and `cis-authorized-sources/`, but those folders are not publishable content and static validation treats source material in the repository as a failure.
 
-## Official CIS sources
+For each benchmark review:
 
+1. Record the official source filename and SHA-256 in `benchmarks/manifest.json`.
+2. Confirm the profile exists in `benchmarks/profile-matrix.json`.
+3. Compare product, version, profile, control IDs, expected values, and validation notes.
+4. Mark each control as `reviewed_against_authorized_source`, `needs_authorized_source_review`, `mismatch`, `organization_defined`, or `not_implemented`.
+5. Keep full CIS text, PDFs, Build Kits, and scanner outputs out of commits.
+
+Use this safe source-review worksheet structure in issues, pull requests, or private notes. Do not copy CIS prose, tables, screenshots, scanner output, or licensed text.
+
+| Field | Value |
+| --- | --- |
+| Reviewer |  |
+| Review date |  |
+| Benchmark product/version/profile |  |
+| Authorized source filename |  |
+| Authorized source SHA-256 |  |
+| Repository control file |  |
+| Manifest entry ID |  |
+| Comparison status | `needs_authorized_source_review` |
+
+For every imported control, compare ID, title/provenance, expected value, profile applicability, validation behavior, remediation behavior, and whether the value is organization-defined. Safe notes should describe repository-side decisions, such as "expected value differs from source", "manual validation only", "organization-defined value", or "not implemented in this profile".
+
+## Static Review Status
+
+The current review was static-only. Benchmark scripts, repository validators, `usg`, `reg.exe`, `secedit.exe`, and shell syntax checks were not run on this computer.
+
+One static reviewer pass was assigned per benchmark area:
+
+- Windows 11 Enterprise.
+- Windows Server 2025.
+- Ubuntu 24.04 LTS.
+- Ubuntu 22.04 LTS.
+- Legacy Windows 10 Enterprise.
+
+The static review improved audit-first behavior, explicit remediation gates, offline-hive opt-in, profile scaffolding, report boundary metadata, and source-material protections. It does not prove exact CIS control accuracy. Exact accuracy remains pending until authorized CIS PDFs or Build Kits are reviewed outside the repository.
+
+Before publishing:
+
+- Confirm only `README.md` remains as Markdown documentation.
+- Confirm official CIS PDFs, Build Kits, scanner exports, report archives, legacy raw scripts, and binary manual documents such as `.docx` files are not committed.
+- Confirm scaffold-only profiles have empty `controls` lists and do not advertise remediation.
+- Confirm Windows profiles with unreviewed embedded controls do not advertise remediation.
+- Confirm Windows entrypoints remain audit-first with `ShouldProcess`, OS target checks, explicit `-Remediate`, and explicit `-IncludeOfflineUserHives`.
+- Confirm Ubuntu wrappers keep profile-neutral benchmark IDs, exact profile checks, and `--yes` for every remediation-mode path, including dry-run previews.
+- Confirm `tools/validate_repo.py` remains static-only and does not execute benchmark scripts or host hardening tools.
+
+Official public entry points:
+
+- CIS Benchmarks: <https://www.cisecurity.org/cis-benchmarks>
 - Microsoft Windows Desktop Benchmarks: <https://www.cisecurity.org/benchmark/microsoft_windows_desktop>
 - Microsoft Windows Server Benchmarks: <https://www.cisecurity.org/benchmark/microsoft_windows_server/>
 - Ubuntu Linux Benchmarks: <https://www.cisecurity.org/benchmark/ubuntu_linux>
-- All CIS Benchmarks: <https://www.cisecurity.org/cis-benchmarks>
+- Canonical USG audit docs: <https://documentation.ubuntu.com/security/compliance/usg/cis-audit/>
+- Canonical USG profile docs: <https://documentation.ubuntu.com/security/compliance/usg/cis-benchmarks/>
 
-## Legacy files
+## Contributing
 
-The root-level `CIS LEVEL 1.bat`, `password policy.inf`, and manual DOCX are retained for comparison only. New development should use the structured benchmark folders and validation-first workflow.
+Security hardening changes can lock people out, break applications, or create false confidence. Contributions should include the benchmark target, profile, authorized-source comparison status, expected rollback considerations, and whether the change is audit-only or remediation-capable.
+
+Contribution ground rules:
+
+- Be respectful and evidence-first.
+- Do not commit official CIS PDFs, Build Kits, scanner exports, report archives, binary manual documents, or licensed benchmark text.
+- Do not claim a control is accurate until it has been compared against authorized source material and safe source metadata is recorded.
+- Do not add remediation that runs by default.
+- Do not run benchmark remediation on someone else's machine to support a contribution.
+- Report security-sensitive issues privately when possible; if no private channel exists, open a minimal public issue asking for a private contact path without sensitive details.
+
+## License
+
+Code and documentation in this repository are released under the Apache License 2.0. See `NOTICE` for non-affiliation and trademark/source-material boundaries. CIS Benchmarks and related source material remain subject to CIS terms and are not licensed by this repository.

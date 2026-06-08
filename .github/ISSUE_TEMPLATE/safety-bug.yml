@@ -1,0 +1,34 @@
+name: Safety or false-compliance bug
+description: Report unsafe behavior, misleading status, or dangerous defaults.
+title: "[Safety]: "
+labels: ["safety"]
+body:
+  - type: input
+    id: file
+    attributes:
+      label: Affected file or benchmark
+      placeholder: "benchmarks/windows/server/windows-server-2025/Invoke-CisWindowsServer2025Level1.ps1"
+    validations:
+      required: true
+  - type: textarea
+    id: risk
+    attributes:
+      label: Risk
+      description: Explain the unsafe behavior or false-compliance risk.
+    validations:
+      required: true
+  - type: textarea
+    id: safer-behavior
+    attributes:
+      label: Safer expected behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: report-boundary
+    attributes:
+      label: Report boundary
+      options:
+        - label: I did not attach logs, scanner exports, CIS PDFs, Build Kits, or licensed benchmark text.
+          required: true
+        - label: I described whether the issue could cause unsafe remediation, false pass/compliance evidence, source-material leakage, credential exposure, or lockout.
+          required: true

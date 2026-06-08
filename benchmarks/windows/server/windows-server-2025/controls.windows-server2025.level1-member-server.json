@@ -1,0 +1,12 @@
+{
+  "benchmark_id": "cis-microsoft-windows-server-2025-2.0.0-level1-member-server",
+  "coverage_status": "scaffold_no_controls_imported",
+  "source_comparison": {
+    "status": "needs_authorized_source_review",
+    "authorized_source_required": true,
+    "expected_source_material": "Official CIS Microsoft Windows Server 2025 Benchmark PDF or Build Kit obtained under the user's own CIS terms",
+    "source_material_committed": false
+  },
+  "notes": "Level 1 Member Server scaffold only. Do not add controls until they are compared against authorized CIS source material.",
+  "controls": []
+}

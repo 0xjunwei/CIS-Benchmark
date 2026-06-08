@@ -1,70 +1,232 @@
 {
-  "schema_version": "1.0",
-  "last_verified_utc": "2026-06-08",
+  "schema_version": "2.0",
+  "last_static_review_utc": "2026-06-08",
+  "profile_matrix_file": "benchmarks/profile-matrix.json",
   "policy": {
-    "source_of_truth": "Official CIS benchmark pages and benchmark PDFs obtained under the user's CIS license/terms.",
-    "copyright_note": "This repository stores implementation metadata and links only; do not redistribute CIS benchmark text beyond permitted terms.",
-    "audit_rule": "A script run is not considered compliant until its matching validation runner or CIS-CAT Pro/authorized scanner reports passing evidence."
+    "source_of_truth": "Official CIS benchmark PDFs or Build Kit files obtained by each user under their own CIS terms.",
+    "source_material_policy": "Authorized CIS PDFs, Build Kits, exports, and scanner outputs must not be committed to this repository.",
+    "non_affiliation": "This project is not affiliated with, endorsed by, sponsored by, or certified by the Center for Internet Security, Inc. (CIS) or Canonical.",
+    "audit_rule": "Repository reports are helper evidence only. A system is not compliant until CIS-CAT Pro, vendor-supported tooling, or another authorized scanner produces passing evidence for the correct benchmark and profile."
+  },
+  "status_legend": {
+    "pass": "A local automated check matched the expected metadata value.",
+    "fail": "A local automated check did not match the expected metadata value.",
+    "organization_defined": "The setting depends on local policy and is not a pass result.",
+    "manual-validation-required": "Automation did not validate the control; authorized manual or scanner evidence is required.",
+    "remediated-needs-validation": "A remediation path was invoked, but a separate authorized validation pass is required.",
+    "whatif": "Preview only; no remediation should have been applied.",
+    "needs_authorized_source_review": "The mapping must be checked against an official CIS source before it is treated as accurate.",
+    "reviewed_against_authorized_source": "A maintainer compared the mapping against an authorized source and recorded the source metadata.",
+    "mismatch": "The local mapping differs from the authorized source and needs correction.",
+    "not_implemented": "The benchmark target is tracked but not implemented.",
+    "scaffold_no_controls_imported": "The profile exists, but no controls have been imported or validated."
   },
   "benchmarks": [
     {
       "id": "cis-microsoft-windows-11-enterprise-5.0.1-level1",
+      "active": true,
       "family": "windows-desktop",
       "product": "Microsoft Windows 11 Enterprise",
       "cis_benchmark_version": "5.0.1",
-      "profile": "Level 1",
+      "profile": "Level 1 starter subset",
       "source_url": "https://www.cisecurity.org/benchmark/microsoft_windows_desktop",
-      "remediation_entrypoint": "benchmarks/windows/desktop/windows-11-enterprise/Invoke-CisWindows11Level1.ps1",
-      "validation_entrypoint": "benchmarks/windows/desktop/windows-11-enterprise/Test-CisWindows11Level1.ps1",
+      "source_metadata": {
+        "source_checked_utc": "2026-06-08",
+        "authorized_source_filename": null,
+        "authorized_source_sha256": null,
+        "comparison_status": "needs_authorized_source_review"
+      },
+      "remediation_entrypoint": null,
+      "validation_entrypoint": "benchmarks/windows/desktop/windows-11-enterprise/Test-CisWindows11Profile.ps1 -Profile level1",
       "controls_file": "benchmarks/windows/desktop/windows-11-enterprise/controls.windows11.enterprise.level1.json",
       "supported_platforms": ["Windows 11 Enterprise"],
-      "status": "framework-ready-needs-full-cis-control-import"
+      "coverage_status": "starter_subset_12_controls_not_full_level1",
+      "status": "review-only-needs-authorized-source-comparison"
     },
     {
-      "id": "cis-microsoft-windows-server-2025-2.0.0-level1",
+      "id": "cis-microsoft-windows-11-enterprise-5.0.1-level2",
+      "active": true,
+      "family": "windows-desktop",
+      "product": "Microsoft Windows 11 Enterprise",
+      "cis_benchmark_version": "5.0.1",
+      "profile": "Level 2 scaffold",
+      "source_url": "https://www.cisecurity.org/benchmark/microsoft_windows_desktop",
+      "source_metadata": {
+        "source_checked_utc": "2026-06-08",
+        "authorized_source_filename": null,
+        "authorized_source_sha256": null,
+        "comparison_status": "needs_authorized_source_review"
+      },
+      "remediation_entrypoint": null,
+      "validation_entrypoint": "benchmarks/windows/desktop/windows-11-enterprise/Test-CisWindows11Profile.ps1 -Profile level2",
+      "controls_file": "benchmarks/windows/desktop/windows-11-enterprise/controls.windows11.enterprise.level2.json",
+      "supported_platforms": ["Windows 11 Enterprise"],
+      "coverage_status": "scaffold_no_controls_imported",
+      "status": "scaffold-only-needs-authorized-source-comparison"
+    },
+    {
+      "id": "cis-microsoft-windows-server-2025-2.0.0-shared-level1-starter",
+      "active": true,
       "family": "windows-server",
       "product": "Microsoft Windows Server 2025",
       "cis_benchmark_version": "2.0.0",
-      "profile": "Level 1",
+      "profile": "Shared Level 1 starter subset; not role-specific profile coverage",
       "source_url": "https://www.cisecurity.org/benchmark/microsoft_windows_server/",
-      "remediation_entrypoint": "benchmarks/windows/server/windows-server-2025/Invoke-CisWindowsServer2025Level1.ps1",
+      "source_metadata": {
+        "source_checked_utc": "2026-06-08",
+        "authorized_source_filename": null,
+        "authorized_source_sha256": null,
+        "comparison_status": "needs_authorized_source_review"
+      },
+      "remediation_entrypoint": null,
       "validation_entrypoint": "benchmarks/windows/server/windows-server-2025/Test-CisWindowsServer2025Level1.ps1",
       "controls_file": "benchmarks/windows/server/windows-server-2025/controls.windows-server2025.level1.json",
       "supported_platforms": ["Windows Server 2025"],
-      "status": "framework-ready-needs-full-cis-control-import"
+      "coverage_status": "starter_subset_12_controls_not_full_role_profile",
+      "status": "review-only-needs-authorized-source-comparison"
     },
     {
-      "id": "cis-ubuntu-linux-24.04-2.0.0-level1",
+      "id": "cis-microsoft-windows-server-2025-2.0.0-level1-member-server",
+      "active": true,
+      "family": "windows-server",
+      "product": "Microsoft Windows Server 2025",
+      "cis_benchmark_version": "2.0.0",
+      "profile": "Level 1 - Member Server scaffold",
+      "source_url": "https://www.cisecurity.org/benchmark/microsoft_windows_server/",
+      "source_metadata": {
+        "source_checked_utc": "2026-06-08",
+        "authorized_source_filename": null,
+        "authorized_source_sha256": null,
+        "comparison_status": "needs_authorized_source_review"
+      },
+      "remediation_entrypoint": null,
+      "validation_entrypoint": "benchmarks/windows/server/windows-server-2025/Test-CisWindowsServer2025Profile.ps1 -Profile level1-member-server",
+      "controls_file": "benchmarks/windows/server/windows-server-2025/controls.windows-server2025.level1-member-server.json",
+      "supported_platforms": ["Windows Server 2025"],
+      "coverage_status": "scaffold_no_controls_imported",
+      "status": "scaffold-only-needs-authorized-source-comparison"
+    },
+    {
+      "id": "cis-microsoft-windows-server-2025-2.0.0-level2-member-server",
+      "active": true,
+      "family": "windows-server",
+      "product": "Microsoft Windows Server 2025",
+      "cis_benchmark_version": "2.0.0",
+      "profile": "Level 2 - Member Server scaffold",
+      "source_url": "https://www.cisecurity.org/benchmark/microsoft_windows_server/",
+      "source_metadata": {
+        "source_checked_utc": "2026-06-08",
+        "authorized_source_filename": null,
+        "authorized_source_sha256": null,
+        "comparison_status": "needs_authorized_source_review"
+      },
+      "remediation_entrypoint": null,
+      "validation_entrypoint": "benchmarks/windows/server/windows-server-2025/Test-CisWindowsServer2025Profile.ps1 -Profile level2-member-server",
+      "controls_file": "benchmarks/windows/server/windows-server-2025/controls.windows-server2025.level2-member-server.json",
+      "supported_platforms": ["Windows Server 2025"],
+      "coverage_status": "scaffold_no_controls_imported",
+      "status": "scaffold-only-needs-authorized-source-comparison"
+    },
+    {
+      "id": "cis-microsoft-windows-server-2025-2.0.0-level1-domain-controller",
+      "active": true,
+      "family": "windows-server",
+      "product": "Microsoft Windows Server 2025",
+      "cis_benchmark_version": "2.0.0",
+      "profile": "Level 1 - Domain Controller scaffold",
+      "source_url": "https://www.cisecurity.org/benchmark/microsoft_windows_server/",
+      "source_metadata": {
+        "source_checked_utc": "2026-06-08",
+        "authorized_source_filename": null,
+        "authorized_source_sha256": null,
+        "comparison_status": "needs_authorized_source_review"
+      },
+      "remediation_entrypoint": null,
+      "validation_entrypoint": "benchmarks/windows/server/windows-server-2025/Test-CisWindowsServer2025Profile.ps1 -Profile level1-domain-controller",
+      "controls_file": "benchmarks/windows/server/windows-server-2025/controls.windows-server2025.level1-domain-controller.json",
+      "supported_platforms": ["Windows Server 2025"],
+      "coverage_status": "scaffold_no_controls_imported",
+      "status": "scaffold-only-needs-authorized-source-comparison"
+    },
+    {
+      "id": "cis-microsoft-windows-server-2025-2.0.0-level2-domain-controller",
+      "active": true,
+      "family": "windows-server",
+      "product": "Microsoft Windows Server 2025",
+      "cis_benchmark_version": "2.0.0",
+      "profile": "Level 2 - Domain Controller scaffold",
+      "source_url": "https://www.cisecurity.org/benchmark/microsoft_windows_server/",
+      "source_metadata": {
+        "source_checked_utc": "2026-06-08",
+        "authorized_source_filename": null,
+        "authorized_source_sha256": null,
+        "comparison_status": "needs_authorized_source_review"
+      },
+      "remediation_entrypoint": null,
+      "validation_entrypoint": "benchmarks/windows/server/windows-server-2025/Test-CisWindowsServer2025Profile.ps1 -Profile level2-domain-controller",
+      "controls_file": "benchmarks/windows/server/windows-server-2025/controls.windows-server2025.level2-domain-controller.json",
+      "supported_platforms": ["Windows Server 2025"],
+      "coverage_status": "scaffold_no_controls_imported",
+      "status": "scaffold-only-needs-authorized-source-comparison"
+    },
+    {
+      "id": "cis-ubuntu-linux-24.04-usg-profiles",
+      "active": true,
       "family": "linux",
       "product": "Ubuntu Linux 24.04 LTS",
       "cis_benchmark_version": "2.0.0",
-      "profile": "Level 1 Server/Workstation via Ubuntu Security Guide where licensed/enabled",
+      "profile": "Profile-parameterized Canonical USG wrapper; see benchmarks/profile-matrix.json",
       "source_url": "https://www.cisecurity.org/benchmark/ubuntu_linux",
-      "remediation_entrypoint": "benchmarks/linux/ubuntu/24.04/cis-ubuntu-24.04.sh",
-      "validation_entrypoint": "benchmarks/linux/ubuntu/24.04/cis-ubuntu-24.04.sh --audit",
+      "source_metadata": {
+        "source_checked_utc": "2026-06-08",
+        "authorized_source_filename": null,
+        "authorized_source_sha256": null,
+        "comparison_status": "needs_authorized_source_review"
+      },
+      "remediation_entrypoint": "benchmarks/linux/ubuntu/24.04/cis-ubuntu-24.04.sh --remediate --yes --profile <cis_profile>",
+      "validation_entrypoint": "benchmarks/linux/ubuntu/24.04/cis-ubuntu-24.04.sh --audit --profile <cis_profile>",
       "supported_platforms": ["Ubuntu 24.04 LTS"],
-      "status": "wrapper-ready-prefers-vendor-cis-tooling"
+      "coverage_status": "delegates_to_canonical_usg_level1_level2_profiles_not_embedded_controls",
+      "status": "wrapper-ready-needs-authorized-source-and-usg-profile-comparison"
     },
     {
-      "id": "cis-ubuntu-linux-22.04-3.0.0-level1",
+      "id": "cis-ubuntu-linux-22.04-usg-profiles",
+      "active": true,
       "family": "linux",
       "product": "Ubuntu Linux 22.04 LTS",
       "cis_benchmark_version": "3.0.0",
-      "profile": "Level 1 Server/Workstation via Ubuntu Security Guide where licensed/enabled",
+      "profile": "Profile-parameterized Canonical USG wrapper; see benchmarks/profile-matrix.json",
       "source_url": "https://www.cisecurity.org/benchmark/ubuntu_linux",
-      "remediation_entrypoint": "benchmarks/linux/ubuntu/22.04/cis-ubuntu-22.04.sh",
-      "validation_entrypoint": "benchmarks/linux/ubuntu/22.04/cis-ubuntu-22.04.sh --audit",
+      "source_metadata": {
+        "source_checked_utc": "2026-06-08",
+        "authorized_source_filename": null,
+        "authorized_source_sha256": null,
+        "comparison_status": "needs_authorized_source_review"
+      },
+      "remediation_entrypoint": "benchmarks/linux/ubuntu/22.04/cis-ubuntu-22.04.sh --remediate --yes --profile <cis_profile>",
+      "validation_entrypoint": "benchmarks/linux/ubuntu/22.04/cis-ubuntu-22.04.sh --audit --profile <cis_profile>",
       "supported_platforms": ["Ubuntu 22.04 LTS"],
-      "status": "wrapper-ready-prefers-vendor-cis-tooling"
+      "coverage_status": "delegates_to_canonical_usg_level1_level2_profiles_not_embedded_controls",
+      "status": "wrapper-ready-needs-authorized-source-and-usg-profile-comparison"
     },
     {
-      "id": "cis-future-expansion",
-      "family": "additional-benchmarks",
-      "product": "Cloud, container, application, browser, database, and SaaS benchmarks",
-      "cis_benchmark_version": "tracked in future manifest entries",
-      "profile": "TBD",
-      "source_url": "https://www.cisecurity.org/cis-benchmarks",
-      "status": "planned-link-only-until-owner-imports-authorized-controls"
+      "id": "cis-microsoft-windows-10-enterprise-legacy",
+      "active": false,
+      "family": "windows-desktop",
+      "product": "Microsoft Windows 10 Enterprise",
+      "cis_benchmark_version": "historical-unverified",
+      "profile": "Legacy Level 1 material; not safe to run",
+      "source_url": "https://www.cisecurity.org/benchmark/microsoft_windows_desktop",
+      "source_metadata": {
+        "source_checked_utc": null,
+        "authorized_source_filename": null,
+        "authorized_source_sha256": null,
+        "comparison_status": "not_implemented"
+      },
+      "archive_path": "legacy/windows-10-enterprise/",
+      "supported_platforms": ["Windows 10 Enterprise"],
+      "coverage_status": "archived_unsafe_reference_only",
+      "status": "archived-not-safe-to-run"
     }
   ]
 }

@@ -1,0 +1,33 @@
+# Generated evidence and reports
+reports/**
+!reports/.gitkeep
+
+# Authorized CIS source material must stay local and uncommitted.
+authorized-sources/
+cis-authorized-sources/
+cis-sources/
+legacy/windows-10-enterprise/original/
+*.docx
+*.pdf
+*.zip
+*.7z
+*.tar
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tgz
+*.scanner-output
+*.scanner-output.*
+*.cis-cat.*
+*.xccdf*.xml
+*.arf.xml
+*.oval-results.xml
+*.usg-results.*
+
+# Local/editor noise
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
+.vscode/
+.idea/

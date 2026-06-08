@@ -102,6 +102,7 @@ function Test-CisRegistryPolicy {
         actual = $actual
         evidence = "$($Control.registry.path)::$($Control.registry.name)"
         implementation_status = $Control.implementation_status
+        source_review_status = $Control.source_review_status
     }
 }
 
@@ -120,30 +121,34 @@ function ConvertTo-CisOfflineHiveName {
 }
 
 function Get-CisUserProfileTargets {
+    param([switch] $IncludeOfflineUserHives)
+
     $sidPattern = '^S-1-5-21-.+-\d+$'
     $loadedSids = @(Get-CisInteractiveUserSids)
     $seen = @{}
     $targets = New-Object System.Collections.Generic.List[object]
 
-    $profiles = @(Get-CimInstance -ClassName Win32_UserProfile |
-        Where-Object {
-            $_.SID -match $sidPattern -and
-            -not $_.Special -and
-            $_.LocalPath -and
-            (Test-Path -LiteralPath (Join-Path $_.LocalPath 'NTUSER.DAT'))
-        })
+    if ($IncludeOfflineUserHives) {
+        $profiles = @(Get-CimInstance -ClassName Win32_UserProfile |
+            Where-Object {
+                $_.SID -match $sidPattern -and
+                -not $_.Special -and
+                $_.LocalPath -and
+                (Test-Path -LiteralPath (Join-Path $_.LocalPath 'NTUSER.DAT'))
+            })
 
-    foreach ($profile in $profiles) {
-        $isLoaded = $loadedSids -contains $profile.SID
-        $targets.Add([pscustomobject]@{
-            Sid = $profile.SID
-            LocalPath = $profile.LocalPath
-            HiveFile = Join-Path $profile.LocalPath 'NTUSER.DAT'
-            RegistryKeyName = if ($isLoaded) { $profile.SID } else { ConvertTo-CisOfflineHiveName -Identity $profile.SID }
-            IsLoaded = $isLoaded
-            IsDefaultProfile = $false
-        })
-        $seen[$profile.SID] = $true
+        foreach ($profile in $profiles) {
+            $isLoaded = $loadedSids -contains $profile.SID
+            $targets.Add([pscustomobject]@{
+                Sid = $profile.SID
+                LocalPath = $profile.LocalPath
+                HiveFile = Join-Path $profile.LocalPath 'NTUSER.DAT'
+                RegistryKeyName = if ($isLoaded) { $profile.SID } else { ConvertTo-CisOfflineHiveName -Identity $profile.SID }
+                IsLoaded = $isLoaded
+                IsDefaultProfile = $false
+            })
+            $seen[$profile.SID] = $true
+        }
     }
 
     foreach ($sid in $loadedSids) {
@@ -159,16 +164,18 @@ function Get-CisUserProfileTargets {
         }
     }
 
-    $defaultHive = Join-Path $env:SystemDrive 'Users\Default\NTUSER.DAT'
-    if (Test-Path -LiteralPath $defaultHive) {
-        $targets.Add([pscustomobject]@{
-            Sid = 'DEFAULT_PROFILE'
-            LocalPath = Join-Path $env:SystemDrive 'Users\Default'
-            HiveFile = $defaultHive
-            RegistryKeyName = 'CIS_DEFAULT_USER'
-            IsLoaded = Test-Path -LiteralPath 'Registry::HKEY_USERS\CIS_DEFAULT_USER'
-            IsDefaultProfile = $true
-        })
+    if ($IncludeOfflineUserHives) {
+        $defaultHive = Join-Path $env:SystemDrive 'Users\Default\NTUSER.DAT'
+        if (Test-Path -LiteralPath $defaultHive) {
+            $targets.Add([pscustomobject]@{
+                Sid = 'DEFAULT_PROFILE'
+                LocalPath = Join-Path $env:SystemDrive 'Users\Default'
+                HiveFile = $defaultHive
+                RegistryKeyName = 'CIS_DEFAULT_USER'
+                IsLoaded = Test-Path -LiteralPath 'Registry::HKEY_USERS\CIS_DEFAULT_USER'
+                IsDefaultProfile = $true
+            })
+        }
     }
 
     return $targets
@@ -247,11 +254,12 @@ function Invoke-CisUserRegistryPolicy {
     param(
         [Parameter(Mandatory)] [pscustomobject] $Control,
         [switch] $Apply,
-        [switch] $WhatIf
+        [switch] $WhatIf,
+        [switch] $IncludeOfflineUserHives
     )
 
     $results = New-Object System.Collections.Generic.List[object]
-    $targets = @(Get-CisUserProfileTargets)
+    $targets = @(Get-CisUserProfileTargets -IncludeOfflineUserHives:$IncludeOfflineUserHives)
 
     foreach ($target in $targets) {
         $mount = Mount-CisUserProfileHive -Target $target -WhatIf:$WhatIf
@@ -263,6 +271,8 @@ function Invoke-CisUserRegistryPolicy {
                 target = $target.Sid
                 hive_status = $mount.Status
                 evidence = $target.HiveFile
+                implementation_status = $Control.implementation_status
+                source_review_status = $Control.source_review_status
             })
             continue
         }
@@ -284,6 +294,8 @@ function Invoke-CisUserRegistryPolicy {
                     target = $target.Sid
                     hive_status = $mount.Status
                     evidence = "$($copy.registry.path)::$($copy.registry.name)"
+                    implementation_status = $Control.implementation_status
+                    source_review_status = $Control.source_review_status
                 }
             } else {
                 Test-CisRegistryPolicy -Control $copy
@@ -297,6 +309,79 @@ function Invoke-CisUserRegistryPolicy {
     }
 
     return $results
+}
+
+function New-CisReportStatusLegend {
+    [ordered]@{
+        pass = 'A local automated check matched the expected metadata value; this is not proof of CIS compliance or authorized-source accuracy.'
+        fail = 'A local automated check did not match the expected metadata value.'
+        organization_defined = 'The setting depends on local policy and is not a pass result.'
+        'manual-validation-required' = 'Automation did not validate the control; authorized manual or scanner evidence is required.'
+        'remediated-needs-validation' = 'A remediation path was invoked; a separate authorized validation pass is required.'
+        whatif = 'Preview only; no remediation should have been applied.'
+    }
+}
+
+function Get-CisRepositoryRoot {
+    param([Parameter(Mandatory)] [string] $StartPath)
+
+    $current = (Resolve-Path -LiteralPath $StartPath).Path
+    if (-not (Get-Item -LiteralPath $current).PSIsContainer) {
+        $current = Split-Path -Parent $current
+    }
+
+    while ($current) {
+        if (Test-Path -LiteralPath (Join-Path $current 'benchmarks\manifest.json')) {
+            return $current
+        }
+        $parent = Split-Path -Parent $current
+        if ($parent -eq $current) {
+            break
+        }
+        $current = $parent
+    }
+
+    throw "Could not locate repository root from '$StartPath'."
+}
+
+function Resolve-CisReportPath {
+    param(
+        [Parameter(Mandatory)] [string] $ControlsPath,
+        [Parameter(Mandatory)] [string] $ReportPath
+    )
+
+    $repoRoot = Get-CisRepositoryRoot -StartPath $ControlsPath
+    if ([System.IO.Path]::IsPathRooted($ReportPath)) {
+        $resolvedReportPath = [System.IO.Path]::GetFullPath($ReportPath)
+    } else {
+        $resolvedReportPath = [System.IO.Path]::GetFullPath((Join-Path $repoRoot $ReportPath))
+    }
+
+    $reportsRoot = [System.IO.Path]::GetFullPath((Join-Path $repoRoot 'reports'))
+    $reportsRootPrefix = $reportsRoot.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
+    if (-not $resolvedReportPath.StartsWith($reportsRootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "ReportPath must stay under repository reports directory: $reportsRoot"
+    }
+
+    return $resolvedReportPath
+}
+
+function Assert-CisControlsReadyForRemediation {
+    param([Parameter(Mandatory)] [pscustomobject] $Controls)
+
+    $comparisonStatus = $Controls.source_comparison.status
+    if ($comparisonStatus -ne 'reviewed_against_authorized_source') {
+        throw "Remediation is disabled until the control set is reviewed against authorized CIS source material. Current source comparison status: $comparisonStatus."
+    }
+
+    $blockingControls = @($Controls.controls | Where-Object {
+        $_.implementation_status -eq 'automated' -and
+        $_.source_review_status -ne 'reviewed_against_authorized_source'
+    })
+    if ($blockingControls.Count -gt 0) {
+        $first = $blockingControls[0]
+        throw "Remediation is disabled because $($blockingControls.Count) automated control(s) have not been reviewed against authorized CIS source material. First blocking control: $($first.id) status '$($first.source_review_status)'."
+    }
 }
 
 function Import-CisSecurityTemplate {
@@ -322,14 +407,31 @@ function Import-CisSecurityTemplate {
 }
 
 function Invoke-CisControls {
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param(
         [Parameter(Mandatory)] [string] $ControlsPath,
         [ValidateSet('Remediate','Audit')] [string] $Mode = 'Audit',
-        [switch] $WhatIf,
+        [switch] $IncludeOfflineUserHives,
         [string] $ReportPath
     )
 
-    $controls = Get-Content -LiteralPath $ControlsPath -Raw | ConvertFrom-Json
+    $resolvedControlsPath = (Resolve-Path -LiteralPath $ControlsPath).Path
+    $controls = Get-Content -LiteralPath $resolvedControlsPath -Raw | ConvertFrom-Json
+    $controlCount = @($controls.controls).Count
+    if ($Mode -eq 'Remediate' -and ($controls.coverage_status -eq 'scaffold_no_controls_imported' -or $controlCount -eq 0)) {
+        throw "Remediation is disabled for scaffold-only or empty control set '$($controls.benchmark_id)'."
+    }
+    if ($Mode -eq 'Remediate') {
+        Assert-CisControlsReadyForRemediation -Controls $controls
+    }
+
+    if ($Mode -eq 'Remediate') {
+        $approved = $PSCmdlet.ShouldProcess($controls.benchmark_id, 'Apply CIS remediation controls')
+        if (-not $approved -and -not $WhatIfPreference) {
+            return @()
+        }
+    }
+
     $results = New-Object System.Collections.Generic.List[object]
 
     foreach ($control in $controls.controls) {
@@ -339,12 +441,14 @@ function Invoke-CisControls {
                 title = $control.title
                 status = $control.implementation_status
                 evidence = $control.validation_note
+                implementation_status = $control.implementation_status
+                source_review_status = $control.source_review_status
             })
             continue
         }
 
         if ($control.scope -eq 'user') {
-            $userResults = Invoke-CisUserRegistryPolicy -Control $control -Apply:($Mode -eq 'Remediate') -WhatIf:$WhatIf
+            $userResults = Invoke-CisUserRegistryPolicy -Control $control -Apply:($Mode -eq 'Remediate') -WhatIf:$WhatIfPreference -IncludeOfflineUserHives:$IncludeOfflineUserHives
             foreach ($userResult in $userResults) {
                 $results.Add($userResult)
             }
@@ -355,11 +459,11 @@ function Invoke-CisControls {
             if ($control.type -eq 'security_template') {
                 $templatePath = $control.template_path
                 if (-not [System.IO.Path]::IsPathRooted($templatePath)) {
-                    $templatePath = Join-Path (Split-Path -Parent $ControlsPath) $templatePath
+                    $templatePath = Join-Path (Split-Path -Parent $resolvedControlsPath) $templatePath
                 }
-                Import-CisSecurityTemplate -TemplatePath $templatePath -WhatIf:$WhatIf
+                Import-CisSecurityTemplate -TemplatePath $templatePath -WhatIf:$WhatIfPreference
             } else {
-                Set-CisRegistryPolicy -Control $control -WhatIf:$WhatIf
+                Set-CisRegistryPolicy -Control $control -WhatIf:$WhatIfPreference
             }
         }
 
@@ -369,21 +473,36 @@ function Invoke-CisControls {
             $results.Add([pscustomobject]@{
                 id = $control.id
                 title = $control.title
-                status = if ($Mode -eq 'Remediate') { 'remediated-needs-validation' } else { 'manual-validation-required' }
+                status = if ($Mode -eq 'Remediate' -and $WhatIfPreference) { 'whatif' } elseif ($Mode -eq 'Remediate') { 'remediated-needs-validation' } else { 'manual-validation-required' }
                 evidence = $control.validation_note
+                implementation_status = $control.implementation_status
+                source_review_status = $control.source_review_status
             })
         }
     }
 
     if ($ReportPath) {
+        $ReportPath = Resolve-CisReportPath -ControlsPath $resolvedControlsPath -ReportPath $ReportPath
         $reportDirectory = Split-Path -Parent $ReportPath
         if ($reportDirectory -and -not (Test-Path -LiteralPath $reportDirectory)) {
             New-Item -ItemType Directory -Path $reportDirectory -Force | Out-Null
         }
-        $results | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $ReportPath -Encoding UTF8
+        $reportDocument = [pscustomobject]@{
+            benchmark_id = $controls.benchmark_id
+            coverage_status = $controls.coverage_status
+            source_comparison = $controls.source_comparison
+            generated_utc = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+            mode = $Mode
+            whatif = [bool]$WhatIfPreference
+            include_offline_user_hives = [bool]$IncludeOfflineUserHives
+            validation_boundary = 'Helper report only; not compliance evidence. Review source_review_status and validate with CIS-CAT Pro, vendor-supported tooling, or another authorized scanner.'
+            status_legend = New-CisReportStatusLegend
+            results = $results
+        }
+        $reportDocument | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $ReportPath -Encoding UTF8
     }
 
     return $results
 }
 
-Export-ModuleMember -Function Test-IsAdministrator,Get-WindowsEditionAndBuild,Assert-CisSupportedWindowsTarget,Set-CisRegistryPolicy,Test-CisRegistryPolicy,Get-CisInteractiveUserSids,ConvertTo-CisOfflineHiveName,Get-CisUserProfileTargets,Mount-CisUserProfileHive,Dismount-CisUserProfileHive,Invoke-CisUserRegistryPolicy,Import-CisSecurityTemplate,Invoke-CisControls
+Export-ModuleMember -Function Test-IsAdministrator,Get-WindowsEditionAndBuild,Assert-CisSupportedWindowsTarget,Invoke-CisControls

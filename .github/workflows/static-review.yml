@@ -1,0 +1,22 @@
+name: Static metadata review
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  metadata:
+    name: Metadata and wrapper text checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Static repository validation
+        run: python3 tools/validate_repo.py

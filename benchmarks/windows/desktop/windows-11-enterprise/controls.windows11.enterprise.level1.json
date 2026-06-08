@@ -1,6 +1,13 @@
 {
   "benchmark_id": "cis-microsoft-windows-11-enterprise-5.0.1-level1",
-  "notes": "Implementation metadata only. Import complete control mappings from an authorized CIS Benchmark/Build Kit before claiming full compliance.",
+  "coverage_status": "starter_subset_12_controls_not_full_level1",
+  "source_comparison": {
+    "status": "needs_authorized_source_review",
+    "authorized_source_required": true,
+    "expected_source_material": "Official CIS Microsoft Windows 11 Enterprise Benchmark PDF or Build Kit obtained under the user's own CIS terms",
+    "source_material_committed": false
+  },
+  "notes": "Implementation metadata only. Import and review the complete authorized CIS control set before claiming Level 1 coverage or compliance.",
   "controls": [
     {
       "id": "2.3.1.2",
@@ -8,6 +15,7 @@
       "type": "registry",
       "scope": "machine",
       "implementation_status": "automated",
+      "source_review_status": "needs_authorized_source_review",
       "attack_surface_reduction": "Prevents adding or logging on with consumer Microsoft accounts on enterprise-managed endpoints.",
       "registry": {
         "path": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System",
@@ -23,6 +31,7 @@
       "type": "registry",
       "scope": "machine",
       "implementation_status": "automated",
+      "source_review_status": "needs_authorized_source_review",
       "attack_surface_reduction": "Preserves granular audit policy behavior for more reliable audit coverage.",
       "registry": {
         "path": "HKLM\\System\\CurrentControlSet\\Control\\Lsa",
@@ -38,6 +47,7 @@
       "type": "registry",
       "scope": "machine",
       "implementation_status": "automated",
+      "source_review_status": "needs_authorized_source_review",
       "attack_surface_reduction": "Limits remote SAM enumeration to administrators instead of a placeholder numeric string.",
       "registry": {
         "path": "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa",
@@ -53,6 +63,7 @@
       "type": "registry",
       "scope": "machine",
       "implementation_status": "automated",
+      "source_review_status": "needs_authorized_source_review",
       "attack_surface_reduction": "Refuses legacy LM and NTLM authentication and requires NTLMv2 responses.",
       "registry": {
         "path": "HKLM\\System\\CurrentControlSet\\Control\\Lsa",
@@ -68,6 +79,7 @@
       "type": "registry",
       "scope": "machine",
       "implementation_status": "automated",
+      "source_review_status": "needs_authorized_source_review",
       "attack_surface_reduction": "Prevents unmanaged local firewall exceptions on untrusted public networks.",
       "registry": {
         "path": "HKLM\\Software\\Policies\\Microsoft\\WindowsFirewall\\PublicProfile",
@@ -83,6 +95,7 @@
       "type": "registry",
       "scope": "machine",
       "implementation_status": "automated",
+      "source_review_status": "needs_authorized_source_review",
       "attack_surface_reduction": "Disables the legacy SMBv1 client driver to reduce exposure to obsolete SMB attacks.",
       "registry": {
         "path": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mrxsmb10",
@@ -98,6 +111,7 @@
       "type": "registry",
       "scope": "machine",
       "implementation_status": "automated",
+      "source_review_status": "needs_authorized_source_review",
       "attack_surface_reduction": "Disables SMBv1 server support to reduce legacy protocol attack surface.",
       "registry": {
         "path": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters",
@@ -113,6 +127,7 @@
       "type": "registry",
       "scope": "machine",
       "implementation_status": "organization_defined",
+      "source_review_status": "organization_defined",
       "attack_surface_reduction": "Requires mutual authentication and integrity for domain NETLOGON access when domain joined.",
       "registry": {
         "path": "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\NetworkProvider\\HardenedPaths",
@@ -128,6 +143,7 @@
       "type": "registry",
       "scope": "machine",
       "implementation_status": "organization_defined",
+      "source_review_status": "organization_defined",
       "attack_surface_reduction": "Requires mutual authentication and integrity for domain SYSVOL access when domain joined.",
       "registry": {
         "path": "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\NetworkProvider\\HardenedPaths",
@@ -143,7 +159,8 @@
       "type": "registry",
       "scope": "user",
       "implementation_status": "automated",
-      "attack_surface_reduction": "Applies the user control to loaded user hives, temporarily loaded signed-out profile hives, and the default profile instead of the invalid HKU\\Software path.",
+      "source_review_status": "needs_authorized_source_review",
+      "attack_surface_reduction": "Applies the user control to loaded user hives by default and to signed-out/default profile hives only when explicitly requested.",
       "registry": {
         "sub_path": "Software\\Policies\\Microsoft\\Windows\\Control Panel\\Desktop",
         "path": "HKU\\PLACEHOLDER",
@@ -151,7 +168,7 @@
         "type": "REG_SZ",
         "expected_value": "1"
       },
-      "validation_note": "Enumerate local user profiles, including signed-out users loaded from NTUSER.DAT, and compare each SID value to 1."
+      "validation_note": "Compare loaded user SID values to 1. Include signed-out and default profile hives only when offline hive access has been approved."
     },
     {
       "id": "19.7.41.1",
@@ -159,6 +176,7 @@
       "type": "registry",
       "scope": "user",
       "implementation_status": "automated",
+      "source_review_status": "needs_authorized_source_review",
       "attack_surface_reduction": "Prevents per-user MSI elevation policy that can enable privilege escalation.",
       "registry": {
         "sub_path": "Software\\Policies\\Microsoft\\Windows\\Installer",
@@ -167,7 +185,7 @@
         "type": "REG_DWORD",
         "expected_value": 0
       },
-      "validation_note": "Enumerate local user profiles, including signed-out users loaded from NTUSER.DAT, and compare each SID value to 0."
+      "validation_note": "Compare loaded user SID values to 0. Include signed-out and default profile hives only when offline hive access has been approved."
     },
     {
       "id": "password-policy-level1",
@@ -175,9 +193,10 @@
       "type": "security_template",
       "scope": "machine",
       "implementation_status": "automated",
+      "source_review_status": "needs_authorized_source_review",
       "template_path": "../../common/password-policy-level1.inf",
       "attack_surface_reduction": "Raises password length, complexity, history, and lockout settings for standalone local policy where domain GPO does not override it.",
-      "validation_note": "Export local security policy with secedit or inspect net accounts; domain GPO may override local settings."
+      "validation_note": "Export local security policy with secedit or inspect net accounts; domain GPO may override local settings. This aggregate starter control is not complete pass/fail evidence."
     }
   ]
 }

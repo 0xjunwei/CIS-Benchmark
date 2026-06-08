@@ -1,0 +1,18 @@
+* text=auto
+
+# Preserve shell scripts with LF for Linux targets.
+*.sh text eol=lf
+
+# Keep Windows scripts readable on Windows.
+*.ps1 text eol=crlf
+*.psm1 text eol=crlf
+*.bat text eol=crlf
+*.inf text eol=crlf
+
+# Binary and licensed/source artifacts.
+*.docx binary
+*.pdf binary
+*.zip binary
+*.7z binary
+*.tar binary
+*.tgz binary

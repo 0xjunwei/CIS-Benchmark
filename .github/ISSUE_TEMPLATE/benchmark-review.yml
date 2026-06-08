@@ -1,0 +1,48 @@
+name: Benchmark accuracy review
+description: Track a static benchmark/source comparison without committing licensed source material.
+title: "[Benchmark Review]: "
+labels: ["benchmark-review"]
+body:
+  - type: input
+    id: benchmark
+    attributes:
+      label: Benchmark target
+      description: Product, version, and profile.
+      placeholder: "Microsoft Windows 11 Enterprise 5.0.1 Level 1"
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Review scope
+      description: List the local files, controls, and profile levels reviewed.
+    validations:
+      required: true
+  - type: textarea
+    id: source-metadata
+    attributes:
+      label: Authorized source metadata
+      description: Record only safe metadata such as source filename, SHA-256, checked date, benchmark version, profile, and comparison status. Use the source-review worksheet format in README.md.
+      placeholder: "No CIS text, tables, screenshots, scanner output, or source files."
+    validations:
+      required: true
+  - type: textarea
+    id: findings
+    attributes:
+      label: Findings
+      description: Summarize mismatches, missing controls, or controls needing authorized-source review. Do not paste licensed CIS text.
+    validations:
+      required: true
+  - type: checkboxes
+    id: source-policy
+    attributes:
+      label: Source policy
+      options:
+        - label: I did not attach or paste licensed CIS PDF/Build Kit text.
+          required: true
+        - label: I did not attach scanner output, Build Kit archives, PDFs, or exported source files.
+          required: true
+        - label: I recorded only permitted metadata such as filename/hash/status.
+          required: true
+        - label: I did not run remediation scripts, usg, reg.exe, secedit.exe, or benchmark scripts on an unintended machine to produce this review.
+          required: true
